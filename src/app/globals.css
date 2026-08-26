@@ -1,26 +1,426 @@
 @import "tailwindcss";
 
+/* Modo oscuro controlado por la clase .dark en <html> (no solo por el sistema) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   TOKENS DE DISEÑO
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Superficies y texto (claro) */
+  --app-bg: #eef1f6;
+  --panel: #ffffff;
+  --panel-2: #f6f8fc;
+  --line: #dbe1ea;
+  --line-soft: #e8edf4;
+  --ink: #10151f;
+  --ink-soft: #5a6474;
+  --brand: #1a56db;
+  --brand-soft: #e6efff;
+  --today-bg: #eaf1ff;
+  --now: #d92d20;
+  --ring: rgba(26, 86, 219, 0.35);
+  --shadow-card: 0 1px 2px rgba(16, 21, 31, 0.06), 0 8px 24px rgba(16, 21, 31, 0.06);
+  --shadow-pop: 0 10px 30px rgba(16, 21, 31, 0.18);
+
+  /* Colores de citas: fondos saturados + texto de máximo contraste.
+     Pensados para leerse de un vistazo y a distancia. */
+  --ev-green-bg: #0f7b3f;
+  --ev-green-accent: #064e28;
+  --ev-green-ink: #ffffff;
+
+  --ev-amber-bg: #c2620a;
+  --ev-amber-accent: #7c3d00;
+  --ev-amber-ink: #ffffff;
+
+  --ev-red-bg: #b42318;
+  --ev-red-accent: #7a1710;
+  --ev-red-ink: #ffffff;
+
+  --ev-blue-bg: #1a56db;
+  --ev-blue-accent: #10307d;
+  --ev-blue-ink: #ffffff;
+
+  /* Citas canceladas (papelera) */
+  --ev-slate-bg: #6b7480;
+  --ev-slate-accent: #434a54;
+  --ev-slate-ink: #ffffff;
+
+  /* Indicadores de "ahora": propio y del despacho */
+  --now-2: #7c3aed;
+
+  /* Aviso / recordatorio */
+  --rem-bg: #0d7d74;
+  --rem-accent: #064e49;
+  --rem-ink: #ffffff;
+}
+
+.dark {
+  --app-bg: #0a0e15;
+  --panel: #141a24;
+  --panel-2: #1b2331;
+  --line: #2b3543;
+  --line-soft: #222b38;
+  --ink: #f2f6fc;
+  --ink-soft: #a7b3c4;
+  --brand: #6c9dff;
+  --brand-soft: #1e2a44;
+  --today-bg: #16203a;
+  --now: #ff6b5e;
+  --ring: rgba(108, 157, 255, 0.45);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 14px 40px rgba(0, 0, 0, 0.6);
+
+  /* En oscuro: fondos claros y vivos con texto muy oscuro = contraste altísimo */
+  --ev-green-bg: #3ddc84;
+  --ev-green-accent: #0b7a3b;
+  --ev-green-ink: #04180d;
+
+  --ev-amber-bg: #ffc247;
+  --ev-amber-accent: #b26a00;
+  --ev-amber-ink: #241701;
+
+  --ev-red-bg: #ff8a80;
+  --ev-red-accent: #b3261e;
+  --ev-red-ink: #2a0705;
+
+  --ev-blue-bg: #8ab4ff;
+  --ev-blue-accent: #1a56db;
+  --ev-blue-ink: #05122e;
+
+  --ev-slate-bg: #98a3b3;
+  --ev-slate-accent: #5b6572;
+  --ev-slate-ink: #0b1220;
+
+  --now-2: #c4b5fd;
+
+  --rem-bg: #5eead4;
+  --rem-accent: #0f766e;
+  --rem-ink: #042f2a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-app-bg: var(--app-bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
+}
+.dark html,
+html.dark {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--app-bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+/* ============================================================
+   ANIMACIONES
+   ============================================================ */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pop-in {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes event-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes now-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 45, 32, 0.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(217, 45, 32, 0); }
+}
+
+.anim-fade-up   { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.anim-fade-in   { animation: fade-in 0.4s ease both; }
+.anim-pop-in    { animation: pop-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+.delay-3 { animation-delay: 0.26s; }
+
+/* ============================================================
+   REACT-BIG-CALENDAR — estética tipo Google Calendar
+   ============================================================ */
+.rbc-calendar {
+  color: var(--ink);
+  font-family: inherit;
+}
+
+/* --- Cabeceras de día --- */
+.rbc-time-view,
+.rbc-month-view {
+  border: none !important;
+  background: transparent !important;
+}
+.rbc-time-header.rbc-overflowing { border-right: none !important; }
+.rbc-time-header-content { border-left: 1px solid var(--line) !important; }
+.rbc-header {
+  border-bottom: 1px solid var(--line) !important;
+  border-left: 1px solid var(--line-soft) !important;
+  padding: 8px 4px !important;
+  font-weight: 500 !important;
+  color: var(--ink-soft) !important;
+  /* RBC recorta la cabecera por defecto; la dejamos crecer para el numero grande */
+  overflow: visible !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rbc-time-header-content > .rbc-row.rbc-time-header-cell,
+.rbc-time-header-content > .rbc-row { min-height: 70px !important; }
+.rbc-header + .rbc-header { border-left: 1px solid var(--line-soft) !important; }
+.rbc-time-header-gutter { color: var(--ink-soft) !important; }
+
+/* --- Rejilla de horas: solo líneas de hora completa, como Google --- */
+.rbc-time-content {
+  border-top: 1px solid var(--line) !important;
+  min-height: 240px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.rbc-time-content::-webkit-scrollbar { width: 10px; }
+.rbc-time-content::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.rbc-time-content > * + * > * { border-left: 1px solid var(--line-soft) !important; }
+.rbc-timeslot-group {
+  border-bottom: 1px solid var(--line-soft) !important;
+  min-height: 60px !important;
+}
+.rbc-day-slot .rbc-time-slot { border-top: none !important; }
+.rbc-time-gutter .rbc-timeslot-group { border-bottom: none !important; }
+.rbc-time-gutter .rbc-label {
+  display: inline-block;
+  padding: 0 10px 0 4px !important;
+  font-size: 12px !important;
+  font-weight: 500;
+  color: var(--ink-soft) !important;
+  transform: translateY(-8px);
+  white-space: nowrap;
+}
+.rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--line-soft) !important; }
+.rbc-today { background-color: var(--today-bg) !important; }
+
+/* Franja "todo el día" */
+.rbc-allday-cell { background: var(--panel-2) !important; }
+.rbc-time-header-content > .rbc-row.rbc-row-resource { border-bottom: 1px solid var(--line) !important; }
+
+/* Selección de un hueco nuevo */
+.rbc-slot-selection {
+  background: color-mix(in srgb, var(--brand) 30%, transparent) !important;
+  border: 1px solid var(--brand) !important;
+  border-radius: 8px !important;
+  color: var(--ink) !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  padding: 2px 6px !important;
+}
+.rbc-day-slot .rbc-time-slot:hover { background: color-mix(in srgb, var(--brand) 6%, transparent); }
+
+/* --- Eventos: el contenedor queda limpio, la tarjeta interior pone el color --- */
+.rbc-event,
+.rbc-day-slot .rbc-event,
+.rbc-month-view .rbc-event {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.rbc-event-label { display: none !important; }
+.rbc-event-content { height: 100% !important; overflow: hidden !important; }
+.rbc-day-slot .rbc-events-container { margin-right: 8px !important; }
+
+/* Columnas estrechas (muchas citas a la vez): escondemos lo secundario */
+.rbc-day-slot .rbc-event { container-type: inline-size; }
+@container (max-width: 118px) {
+  .ev-when-wide { display: none !important; }
+}
+@container (max-width: 88px) {
+  .ev-when-roomy { display: none !important; }
+}
+
+.ev-card {
+  animation: event-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, filter 0.18s ease;
+  will-change: transform;
+}
+/* Citas canceladas: gris + trama diagonal, se distinguen sin depender del color */
+.ev-card--cancelled {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.16) 0 6px,
+    rgba(255, 255, 255, 0) 6px 12px
+  );
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+  opacity: 0.9;
+}
+
+.rbc-event:hover .ev-card {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-pop);
+  filter: saturate(1.08);
+  z-index: 5;
+}
+.rbc-event.rbc-selected .ev-card {
+  outline: 2.5px solid var(--ink);
+  outline-offset: -1px;
+}
+.rbc-event:focus-visible .ev-card {
+  outline: 3px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* Dibujamos nuestras propias lineas de "ahora" (local + despacho) */
+.rbc-current-time-indicator { display: none !important; }
+
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+.now-line::after {
+  content: "";
+  display: block;
+  height: 0;
+  border-top: 2px solid var(--now-line-color, var(--now));
+}
+.now-line[data-kind="lawyer"]::after { border-top-style: dashed; }
+.now-line__dot {
+  position: absolute;
+  left: -1px;
+  top: -4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--now-line-color, var(--now));
+  animation: now-pulse 2.4s ease-in-out infinite;
+}
+.now-line[data-kind="lawyer"] .now-line__dot { animation: none; }
+.now-line__pill {
+  position: absolute;
+  top: -10px;
+  left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--now-line-color, var(--now));
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.dark .now-line[data-kind="lawyer"] .now-line__pill { color: #1b1036; }
+
+/* --- Vista de mes --- */
+.rbc-month-row + .rbc-month-row { border-top: 1px solid var(--line-soft) !important; }
+.rbc-month-view .rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--line-soft) !important; }
+.rbc-date-cell {
+  text-align: right;
+  padding: 6px 8px 2px !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  color: var(--ink-soft) !important;
+}
+.rbc-date-cell .rbc-button-link { color: inherit !important; }
+.rbc-date-cell.rbc-now .rbc-button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff !important;
+  font-weight: 700;
+}
+.rbc-off-range-bg { background: var(--panel-2) !important; }
+.rbc-off-range { opacity: 0.45; }
+.rbc-row-segment { padding: 0 3px 3px !important; }
+.rbc-show-more {
+  background: transparent !important;
+  color: var(--brand) !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  padding: 0 4px !important;
+}
+.rbc-show-more:hover { text-decoration: underline; }
+
+/* Popup de "+N más" */
+.rbc-overlay {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--shadow-pop) !important;
+  padding: 10px !important;
+  animation: pop-in 0.2s ease both;
+}
+.rbc-overlay-header {
+  border-bottom: 1px solid var(--line) !important;
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  margin: -10px -10px 8px !important;
+  padding: 10px !important;
+}
+
+/* --- Vista agenda --- */
+.rbc-agenda-view table.rbc-agenda-table { border-color: var(--line) !important; }
+.rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-bottom: 1px solid var(--line) !important;
+  color: var(--ink-soft) !important;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  border-color: var(--line-soft) !important;
+  color: var(--ink) !important;
+  font-size: 14px;
+  padding: 10px 8px !important;
+}
+.rbc-agenda-view table.rbc-agenda-table tbody > tr + tr > td { border-top: 1px solid var(--line-soft) !important; }
+.rbc-agenda-time-cell { color: var(--ink-soft) !important; }
+.rbc-agenda-empty { color: var(--ink-soft) !important; padding: 24px !important; }
+
+/* ============================================================
+   ACCESIBILIDAD: sin animaciones si el sistema lo pide
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
