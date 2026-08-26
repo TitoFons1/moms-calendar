@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  moms-calendar:
+    build: .
+    container_name: moms-calendar-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
