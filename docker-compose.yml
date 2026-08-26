@@ -2,10 +2,19 @@ version: '3.8'
 
 services:
   moms-calendar:
-    build: .
+    build:
+      context: .
+      # --- AÑADIDO PARA PASAR LAS VARIABLES DESDE PORTAINER ---
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      # --------------------------------------------------------
     container_name: moms-calendar-app
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      # También las dejamos disponibles durante la ejecución
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
