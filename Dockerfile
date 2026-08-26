@@ -1,22 +1,44 @@
-FROM node:20-alpine
-
-# Establecemos el directorio de trabajo
+# --- Etapa 1: dependencias ---
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copiamos primero los archivos de dependencias para aprovechar la caché de Docker
-COPY package*.json ./
-
-# Instalamos todas las dependencias
-RUN npm install
-
-# Copiamos el resto del código (incluyendo el .env.local)
+# --- Etapa 2: build ---
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Compilamos la aplicación de Next.js
+# Variables NEXT_PUBLIC_*: deben existir en build time porque Next.js
+# las incrusta en el JS del cliente al compilar.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
-# Exponemos el puerto
-EXPOSE 3000
+# --- Etapa 3: runtime ---
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Arrancamos el servidor de producción
-CMD ["npm", "run", "start"]
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
+
+# Salida "standalone": incluye solo lo necesario para ejecutar en producción
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
