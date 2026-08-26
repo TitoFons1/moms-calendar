@@ -1,12 +1,4 @@
 node_modules
 .next
 .git
-.github
 README.md
-*.md
-.env
-.env.*
-!.env.example
-npm-debug.log*
-Dockerfile
-docker-compose.yml
