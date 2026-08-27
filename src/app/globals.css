@@ -121,6 +121,21 @@ html.dark {
   color-scheme: dark;
 }
 
+/* El desplegable nativo de un <select> se pinta con el fondo del propio campo:
+   con `background: transparent` el navegador lo saca en blanco aunque el tema
+   sea oscuro. Le damos fondo y esquema de color explícitos a las opciones. */
+select {
+  color-scheme: light;
+}
+.dark select {
+  color-scheme: dark;
+}
+.dark select option,
+.dark select optgroup {
+  background-color: var(--panel);
+  color: var(--ink);
+}
+
 body {
   background: var(--app-bg);
   color: var(--ink);
@@ -152,9 +167,15 @@ body {
   50%      { box-shadow: 0 0 0 6px rgba(217, 45, 32, 0); }
 }
 
-.anim-fade-up   { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.anim-fade-in   { animation: fade-in 0.4s ease both; }
-.anim-pop-in    { animation: pop-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* `backwards` y no `both`: una animación de `transform` que se queda
+   «rellenando» convierte al elemento en bloque contenedor de sus hijos
+   `position: fixed`, y entonces los diálogos a pantalla completa se recortan
+   dentro de la tarjeta. Con `backwards` el estado inicial se respeta durante el
+   retardo y, al acabar, la animación deja de aplicarse (el estado final ya es
+   el natural). */
+.anim-fade-up   { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.anim-fade-in   { animation: fade-in 0.4s ease backwards; }
+.anim-pop-in    { animation: pop-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
 .delay-1 { animation-delay: 0.08s; }
 .delay-2 { animation-delay: 0.16s; }
 .delay-3 { animation-delay: 0.26s; }
@@ -181,7 +202,13 @@ body {
   padding: 8px 4px !important;
   font-weight: 500 !important;
   color: var(--ink-soft) !important;
-  /* RBC recorta la cabecera por defecto; la dejamos crecer para el numero grande */
+}
+/* Centrado y alto libre SOLO en las rejillas de día/semana/mes: la agenda usa
+   una tabla de verdad y `display: flex` sobre sus <th> rompe la fila (las tres
+   cabeceras se apilan una debajo de otra en vez de ir en línea). */
+.rbc-time-view .rbc-header,
+.rbc-month-view .rbc-header {
+  /* RBC recorta la cabecera por defecto; la dejamos crecer para el número grande */
   overflow: visible !important;
   height: auto !important;
   display: flex;
@@ -197,6 +224,7 @@ body {
 .rbc-time-content {
   border-top: 1px solid var(--line) !important;
   min-height: 240px;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
@@ -240,7 +268,9 @@ body {
   font-weight: 600;
   padding: 2px 6px !important;
 }
-.rbc-day-slot .rbc-time-slot:hover { background: color-mix(in srgb, var(--brand) 6%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .rbc-day-slot .rbc-time-slot:hover { background: color-mix(in srgb, var(--brand) 6%, transparent); }
+}
 
 /* --- Eventos: el contenedor queda limpio, la tarjeta interior pone el color --- */
 .rbc-event,
@@ -281,11 +311,13 @@ body {
   opacity: 0.9;
 }
 
-.rbc-event:hover .ev-card {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-pop);
-  filter: saturate(1.08);
-  z-index: 5;
+@media (hover: hover) and (pointer: fine) {
+  .rbc-event:hover .ev-card {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-pop);
+    filter: saturate(1.08);
+    z-index: 5;
+  }
 }
 .rbc-event.rbc-selected .ev-card {
   outline: 2.5px solid var(--ink);
@@ -397,10 +429,15 @@ body {
 .rbc-agenda-view table.rbc-agenda-table { border-color: var(--line) !important; }
 .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
   border-bottom: 1px solid var(--line) !important;
+  border-left: none !important;
+  padding: 3px 8px !important;
   color: var(--ink-soft) !important;
-  font-size: 12px;
+  font-size: 10.5px;
+  font-weight: 700 !important;
+  line-height: 1.4;
+  text-align: left;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
   border-color: var(--line-soft) !important;
@@ -409,8 +446,165 @@ body {
   padding: 10px 8px !important;
 }
 .rbc-agenda-view table.rbc-agenda-table tbody > tr + tr > td { border-top: 1px solid var(--line-soft) !important; }
-.rbc-agenda-time-cell { color: var(--ink-soft) !important; }
+.rbc-agenda-time-cell { color: var(--ink-soft) !important; white-space: nowrap; }
+/* Un título muy largo sin espacios no debe ensanchar la tabla */
+.rbc-agenda-view .rbc-agenda-event-cell { overflow-wrap: anywhere; }
 .rbc-agenda-empty { color: var(--ink-soft) !important; padding: 24px !important; }
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+
+/* Tira que se desliza en horizontal sin enseñar barra de scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Marco de la app: respeta las zonas seguras (notch, barra de gestos) */
+.app-shell {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+@media (min-width: 640px) {
+  .app-shell {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(1.25rem, env(safe-area-inset-left));
+    padding-right: max(1.25rem, env(safe-area-inset-right));
+  }
+}
+@media (min-width: 1024px) {
+  .app-shell {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+/* Hoja a pantalla completa en móvil: respeta las zonas seguras del teléfono */
+.sheet-safe {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (min-width: 768px) {
+  .sheet-safe { padding-top: 0; padding-bottom: 0; }
+}
+
+/* ============================================================
+   RESPONSIVE — portátiles pequeños, tablets y móviles
+   (también cubre el zoom del navegador: al ampliar, el viewport
+   medido en px CSS se estrecha y entran estas mismas reglas)
+   ============================================================ */
+
+/* --- Portátil pequeño / tablet en horizontal / zoom moderado --- */
+@media (max-width: 1024px) {
+  .rbc-time-header-content > .rbc-row.rbc-time-header-cell,
+  .rbc-time-header-content > .rbc-row { min-height: 62px !important; }
+  .rbc-timeslot-group { min-height: 56px !important; }
+}
+
+/* --- Tablet en vertical y móviles --- */
+@media (max-width: 767px) {
+  .rbc-header { padding: 6px 2px !important; }
+  .rbc-time-header-content > .rbc-row.rbc-time-header-cell,
+  .rbc-time-header-content > .rbc-row { min-height: 46px !important; }
+
+  /* La franja de «todo el día» reservaba ~50 px aunque estuviera vacía. En
+     móvil la dejamos ajustarse a lo que contenga, con un tope por si algún
+     día hay muchas entradas de día completo. */
+  .rbc-allday-cell { max-height: 88px; overflow-y: auto; }
+  .rbc-allday-cell .rbc-row-content .rbc-row { min-height: 0 !important; }
+
+  .rbc-timeslot-group { min-height: 52px !important; }
+  .rbc-time-content { min-height: 180px; }
+  .rbc-time-content::-webkit-scrollbar { width: 6px; }
+
+  .rbc-time-gutter .rbc-label {
+    padding: 0 5px 0 2px !important;
+    font-size: 10.5px !important;
+  }
+  .rbc-day-slot .rbc-events-container { margin-right: 4px !important; }
+
+  /* Vista de mes: números y citas más compactos para que quepan 7 columnas */
+  .rbc-date-cell {
+    padding: 4px 5px 1px !important;
+    font-size: 12px !important;
+  }
+  .rbc-date-cell.rbc-now .rbc-button-link {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+  }
+  .rbc-row-segment { padding: 0 2px 2px !important; }
+  .rbc-show-more { font-size: 10.5px !important; padding: 0 2px !important; }
+  /* La hora no cabe junto al nombre en columnas de ~50 px */
+  .ev-month-time { display: none !important; }
+
+  /* Popup de «+N más»: nunca más ancho que la pantalla */
+  .rbc-overlay {
+    max-width: calc(100vw - 24px);
+    padding: 8px !important;
+  }
+
+  /* Agenda: que la tabla pueda deslizarse si no cabe */
+  .rbc-agenda-view { overflow-x: auto; }
+  .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+    font-size: 13px;
+    padding: 8px 6px !important;
+  }
+
+  .now-line__pill { font-size: 9.5px; padding: 1px 5px; }
+}
+
+/* --- Semana en pantallas estrechas: la rejilla se desliza en horizontal ---
+   Siete columnas por debajo de ~90 px son ilegibles, así que damos un ancho
+   mínimo a la rejilla y dejamos que cabecera y contenido se deslicen juntos. */
+@media (max-width: 767px) {
+  [data-cal-view="week"] .rbc-time-view {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  [data-cal-view="week"] .rbc-time-view > .rbc-time-header,
+  [data-cal-view="week"] .rbc-time-view > .rbc-time-content { min-width: 660px; }
+}
+
+@media (max-width: 767px) {
+  [data-cal-view="month"] .rbc-month-view { min-width: 0; }
+}
+
+/* --- Móviles pequeños (<= 400 px) --- */
+@media (max-width: 400px) {
+  .rbc-time-gutter .rbc-label { font-size: 10px !important; }
+  .rbc-header { padding: 5px 1px !important; }
+  .rbc-date-cell { font-size: 11px !important; padding: 3px 3px 1px !important; }
+}
+
+/* --- Ventanas bajas: portátiles de 768 px de alto, o el navegador con zoom ---
+   En vez de hacer que la página se desplace, recortamos el marco del propio
+   calendario para que la rejilla se quede con el sitio que importa. */
+@media (max-height: 780px) {
+  .rbc-time-header-content > .rbc-row.rbc-time-header-cell { min-height: 56px !important; }
+  .rbc-allday-cell { max-height: 64px; overflow-y: auto; }
+  .rbc-allday-cell .rbc-row-content .rbc-row { min-height: 0 !important; }
+}
+@media (max-height: 640px) {
+  .rbc-time-header-content > .rbc-row.rbc-time-header-cell { min-height: 48px !important; }
+  .rbc-timeslot-group { min-height: 50px !important; }
+}
+
+/* --- Móvil en horizontal / ventanas muy bajas --- */
+@media (max-height: 560px) and (max-width: 1024px) {
+  .rbc-timeslot-group { min-height: 44px !important; }
+  .rbc-time-header-content > .rbc-row.rbc-time-header-cell,
+  .rbc-time-header-content > .rbc-row { min-height: 46px !important; }
+  .rbc-time-content { min-height: 140px; }
+}
 
 /* ============================================================
    ACCESIBILIDAD: sin animaciones si el sistema lo pide

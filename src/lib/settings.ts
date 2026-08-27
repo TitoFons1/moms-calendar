@@ -104,10 +104,17 @@ export const useSettings = (): Settings =>
 
 /* ---------- Utilidades de horas y zonas ---------- */
 
-export const hourLabel = (hour: number): string => {
+/**
+ * Etiqueta de una hora del día.
+ *
+ * `short` es para los selectores estrechos: un <select> se dimensiona con su
+ * opción más larga, asi que «12 AM (fin del día)» dejaba un hueco vacío a la
+ * derecha con cualquier otra hora elegida.
+ */
+export const hourLabel = (hour: number, short = false): string => {
   if (hour === 0) return '12 AM';
   if (hour === 12) return '12 PM';
-  if (hour === 24) return '12 AM (fin del día)';
+  if (hour === 24) return short ? '12 AM' : '12 AM (fin del día)';
   return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
 };
 

@@ -75,7 +75,13 @@ export default function SettingsPanel({ isOpen, onClose, settings }: Props) {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // En móvil el panel ocupa toda la pantalla: congelamos el scroll de detrás.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -83,8 +89,9 @@ export default function SettingsPanel({ isOpen, onClose, settings }: Props) {
   const endHours = Array.from({ length: 24 - settings.dayStartHour }, (_, i) => settings.dayStartHour + 1 + i);
 
   return (
+    /* Móvil: hoja a pantalla completa. Desde `md`, diálogo sobre la tarjeta. */
     <div
-      className="anim-fade-in absolute inset-0 z-[60] flex items-center justify-center rounded-3xl bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5"
+      className="anim-fade-in fixed inset-0 z-[60] flex items-stretch justify-center bg-slate-950/55 backdrop-blur-sm md:absolute md:items-center md:rounded-3xl md:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -93,34 +100,34 @@ export default function SettingsPanel({ isOpen, onClose, settings }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Configuración"
-        className="anim-pop-in flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-pop)]"
+        className="anim-pop-in sheet-safe flex h-full w-full flex-col overflow-hidden bg-panel shadow-[var(--shadow-pop)] md:h-auto md:max-h-full md:max-w-3xl md:rounded-2xl md:border md:border-line"
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-4">
-          <div>
-            <h2 className="text-xl font-bold text-ink">Configuración</h2>
-            <p className="text-[13.5px] text-ink-soft">Zonas horarias, horario visible y filtros</p>
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-ink sm:text-xl">Configuración</h2>
+            <p className="truncate text-[12.5px] text-ink-soft sm:text-[13.5px]">Zonas horarias, horario visible y filtros</p>
           </div>
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-2xl leading-none text-ink-soft transition-all duration-200 hover:bg-brand-soft hover:text-ink active:scale-90"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-ink-soft transition-all duration-200 hover:bg-brand-soft hover:text-ink active:scale-90"
           >
             &times;
           </button>
         </div>
 
-        <div className="min-h-0 space-y-6 overflow-y-auto p-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-4 sm:space-y-6 sm:p-5">
           {/* ---------------- Relojes ---------------- */}
           <section className="space-y-3">
             <h3 className={SECTION_TITLE}>Relojes e indicadores de la hora actual</h3>
 
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-panel-2 px-4 py-3">
-              <span className="inline-flex items-center gap-2 text-[15px] font-bold text-ink">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-line bg-panel-2 px-3.5 py-3 sm:px-4">
+              <span className="inline-flex items-center gap-2 text-[14px] font-bold text-ink sm:text-[15px]">
                 <span aria-hidden className="h-[3px] w-5 rounded-full" style={{ background: 'var(--now)' }} />
                 {settings.localLabel}: <span className="tabular-nums">{clockInZone(now, localZone)}</span>
               </span>
-              <span className="text-ink-soft">|</span>
-              <span className="inline-flex items-center gap-2 text-[15px] font-bold text-ink">
+              <span className="hidden text-ink-soft sm:inline">|</span>
+              <span className="inline-flex items-center gap-2 text-[14px] font-bold text-ink sm:text-[15px]">
                 <span aria-hidden className="h-0 w-5" style={{ borderTop: '3px dashed var(--now-2)' }} />
                 {settings.lawyerLabel}: <span className="tabular-nums">{clockInZone(now, settings.lawyerTimeZone)}</span>
               </span>
@@ -263,18 +270,18 @@ export default function SettingsPanel({ isOpen, onClose, settings }: Props) {
           </section>
         </div>
 
-        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line bg-panel-2 px-5 py-3.5">
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-line bg-panel-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-3.5">
           <button
             type="button"
             onClick={resetSettings}
-            className="rounded-xl border border-line bg-panel px-4 py-2.5 text-[14px] font-bold text-ink-soft shadow-sm transition-all duration-200 hover:text-ink active:scale-95"
+            className="rounded-xl border border-line bg-panel px-4 py-2.5 text-[13.5px] font-bold text-ink-soft shadow-sm transition-all duration-200 hover:text-ink active:scale-95 sm:text-[14px]"
           >
             Restaurar valores por defecto
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-brand px-5 py-2.5 text-[14px] font-bold text-white shadow-sm transition-all duration-200 hover:brightness-110 active:scale-95"
+            className="rounded-xl bg-brand px-5 py-2.5 text-[13.5px] font-bold text-white shadow-sm transition-all duration-200 hover:brightness-110 active:scale-95 sm:text-[14px]"
           >
             Listo
           </button>

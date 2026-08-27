@@ -94,7 +94,7 @@ export default function ThemeToggle() {
     <div
       role="group"
       aria-label="Tema de la aplicación"
-      className="flex items-center gap-1 rounded-full border border-line bg-panel p-1 shadow-sm"
+      className="flex shrink-0 items-center gap-1 rounded-full border border-line bg-panel p-1 shadow-sm"
     >
       {OPTIONS.map((option) => {
         const active = theme === option.id;
@@ -105,14 +105,14 @@ export default function ThemeToggle() {
             onClick={() => selectTheme(option.id)}
             aria-pressed={active}
             title={option.label}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-all duration-200 active:scale-95 ${
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-2 text-[13px] font-semibold transition-all duration-200 active:scale-95 sm:px-3 sm:py-1.5 ${
               active ? 'bg-brand text-white shadow-sm' : 'text-ink-soft hover:bg-brand-soft hover:text-ink'
             }`}
           >
             <span className={`transition-transform duration-300 ${active ? 'scale-110' : 'scale-100'}`}>
               {option.icon}
             </span>
-            <span className="hidden sm:inline">{option.label}</span>
+            <span className="hidden md:inline">{option.label}</span>
           </button>
         );
       })}

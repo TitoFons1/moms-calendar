@@ -14,6 +14,7 @@ import { APPOINTMENT_TYPES } from '../../lib/appointmentConstants';
 import { BLOCK_TYPE, REMINDER_TYPE, isBlock, isCancelled, isReminderEntry, visualFor } from '../../lib/statusStyles';
 import { StatusFilterKey, effectiveLocalZone, useSettings } from '../../lib/settings';
 import { dayKey, readReminder } from '../../lib/reminders';
+import { MOBILE_QUERY, useMediaQuery } from '../../lib/useMediaQuery';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -92,16 +93,18 @@ type ToolbarBits = {
 };
 
 const CustomToolbar = ({ label, view, onNavigate, onView }: ToolbarBits) => (
-  <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
+  /* Móvil: fila 1 = Hoy + flechas + fecha; fila 2 = selector de vista a lo
+     ancho. Desde `md` todo cabe en una sola fila. */
+  <div className="mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 sm:gap-x-3 sm:gap-y-2.5">
     <button
       type="button"
       onClick={() => onNavigate('TODAY')}
-      className="rounded-full border border-line bg-panel px-4 py-2 text-[14px] font-bold text-ink shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-soft active:scale-95"
+      className="shrink-0 rounded-full border border-line bg-panel px-3.5 py-2 text-[13.5px] font-bold text-ink shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-soft active:scale-95 sm:px-4 sm:text-[14px]"
     >
       Hoy
     </button>
 
-    <div className="flex items-center gap-1">
+    <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
       <button
         type="button"
         aria-label="Anterior"
@@ -122,11 +125,11 @@ const CustomToolbar = ({ label, view, onNavigate, onView }: ToolbarBits) => (
       </button>
     </div>
 
-    <h2 className="min-w-0 flex-1 truncate text-lg font-bold text-ink first-letter:uppercase sm:text-xl">
+    <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink first-letter:uppercase sm:text-lg lg:text-xl">
       {label}
     </h2>
 
-    <div className="flex items-center gap-1 rounded-full border border-line bg-panel p-1 shadow-sm">
+    <div className="flex w-full items-center gap-1 rounded-full border border-line bg-panel p-1 shadow-sm md:w-auto">
       {VIEWS.map((name) => {
         const active = view === name;
         return (
@@ -135,7 +138,7 @@ const CustomToolbar = ({ label, view, onNavigate, onView }: ToolbarBits) => (
             type="button"
             onClick={() => onView(name)}
             aria-pressed={active}
-            className={`rounded-full px-3.5 py-1.5 text-[14px] font-bold transition-all duration-200 active:scale-95 ${
+            className={`flex-1 rounded-full px-2 py-1.5 text-[13px] font-bold transition-all duration-200 active:scale-95 md:flex-none md:px-3.5 md:text-[14px] ${
               active ? 'bg-brand text-white shadow-sm' : 'text-ink-soft hover:bg-brand-soft hover:text-ink'
             }`}
           >
@@ -149,7 +152,7 @@ const CustomToolbar = ({ label, view, onNavigate, onView }: ToolbarBits) => (
 
 /* ---------- Cabecera de los nombres de día en la vista de mes ---------- */
 const MonthColumnHeader = ({ date }: { date: Date }) => (
-  <span className="text-[13px] font-bold uppercase tracking-wider text-ink-soft">
+  <span className="truncate text-[11px] font-bold uppercase tracking-wide text-ink-soft sm:text-[12px] sm:tracking-wider lg:text-[13px]">
     {moment(date).format('ddd').replace('.', '')}
   </span>
 );
@@ -166,6 +169,21 @@ export default function CalendarView() {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>('week');
+
+  // En móvil, siete columnas de semana quedan demasiado apretadas: arrancamos
+  // en «Día». Si se elige otra vista a mano, se respeta esa elección.
+  const isMobile = useMediaQuery(MOBILE_QUERY);
+  const viewPickedByUser = useRef(false);
+
+  useEffect(() => {
+    if (viewPickedByUser.current) return;
+    setCurrentView(isMobile ? 'day' : 'week');
+  }, [isMobile]);
+
+  const handleViewChange = (nextView: View) => {
+    viewPickedByUser.current = true;
+    setCurrentView(nextView);
+  };
 
   const fetchAppointments = async () => {
     const { data, error } = await supabase.from('Appointment').select('*');
@@ -274,12 +292,12 @@ export default function CalendarView() {
     const isToday = moment(date).isSame(moment(), 'day');
     return (
       <div className="flex flex-col items-center gap-0.5 py-1">
-        <span className={`text-[12px] font-bold uppercase tracking-wider ${isToday ? 'text-brand' : 'text-ink-soft'}`}>
+        <span className={`text-[10.5px] font-bold uppercase tracking-wide sm:text-[12px] sm:tracking-wider ${isToday ? 'text-brand' : 'text-ink-soft'}`}>
           {moment(date).format('ddd').replace('.', '')}
         </span>
         <span className="flex items-center gap-1">
           <span
-            className={`flex h-9 w-9 items-center justify-center rounded-full text-[18px] font-bold transition-colors duration-200 ${
+            className={`flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-bold transition-colors duration-200 sm:h-9 sm:w-9 sm:text-[18px] ${
               isToday ? 'bg-brand text-white shadow-sm' : 'text-ink'
             }`}
           >
@@ -428,6 +446,44 @@ export default function CalendarView() {
     );
   };
 
+  /* ---------- Cita en vista de agenda (una fila de tabla) ----------
+     La agenda es una tabla: si aquí reutilizamos la tarjeta de la rejilla, sus
+     textos `whitespace-nowrap` fuerzan el ancho de la celda y la tabla se
+     desborda. Esta versión fluye y se parte en varias líneas. */
+  const AgendaEvent = ({ event }: any) => {
+    const status = event.originalData?.status as string | undefined;
+    const visual = visualFor(status);
+    const cancelled = isCancelled(status);
+    const reminderEntry = isReminderEntry(event.originalData);
+    const type = typeLabel(event.originalData?.type);
+    const hasReminder = Boolean(readReminder(event.originalData));
+
+    return (
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <span
+          aria-hidden
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-black"
+          style={{ background: visual.bg, color: visual.ink }}
+        >
+          {visual.icon}
+        </span>
+        <span className={`min-w-0 break-words text-[14px] font-bold text-ink ${cancelled ? 'line-through' : ''}`}>
+          {event.originalData?.client_name}
+        </span>
+        {type && !reminderEntry && (
+          <span className="text-[12.5px] font-medium text-ink-soft">{type}</span>
+        )}
+        <span
+          className="shrink-0 rounded-full px-2 py-[1px] text-[11px] font-bold"
+          style={{ background: visual.bg, color: visual.ink }}
+        >
+          {visual.label}
+        </span>
+        {hasReminder && <Bell className="h-3 w-3 shrink-0 text-ink-soft" />}
+      </div>
+    );
+  };
+
   /* ---------- Cita en vista de mes (una sola línea) ---------- */
   const MonthEvent = ({ event }: any) => {
     const status = event.originalData?.status as string | undefined;
@@ -444,10 +500,10 @@ export default function CalendarView() {
         <span aria-hidden className="text-[10px] font-black leading-none opacity-90">
           {visual.icon}
         </span>
-        <span className="whitespace-nowrap text-[11.5px] font-bold leading-none">
+        <span className="ev-month-time whitespace-nowrap text-[11.5px] font-bold leading-none">
           {moment(event.start).format('h:mm A')}
         </span>
-        <span className={`truncate text-[12.5px] font-semibold leading-none ${cancelled ? 'line-through' : ''}`}>
+        <span className={`truncate text-[11.5px] font-semibold leading-none sm:text-[12.5px] ${cancelled ? 'line-through' : ''}`}>
           {event.originalData?.client_name}
         </span>
         {hasReminder && <Bell className="ml-auto h-[11px] w-[11px] shrink-0 opacity-90" />}
@@ -458,7 +514,8 @@ export default function CalendarView() {
   return (
     <div
       ref={rootRef}
-      className="relative flex h-full min-h-0 flex-col rounded-3xl border border-line bg-panel p-3 shadow-[var(--shadow-card)] transition-colors duration-300 sm:p-4"
+      data-cal-view={currentView}
+      className="relative flex h-full min-h-0 flex-col rounded-2xl border border-line bg-panel p-2 shadow-[var(--shadow-card)] transition-colors duration-300 sm:rounded-3xl sm:p-3 lg:p-4"
     >
       <FilterBar settings={settings} onOpenSettings={() => setIsSettingsOpen(true)} />
 
@@ -471,7 +528,7 @@ export default function CalendarView() {
         date={currentDate}
         onNavigate={(newDate) => setCurrentDate(newDate)}
         view={currentView}
-        onView={(newView) => setCurrentView(newView)}
+        onView={handleViewChange}
         startAccessor="start"
         endAccessor="end"
         tooltipAccessor={tooltipAccessor}
@@ -492,6 +549,7 @@ export default function CalendarView() {
           week: { header: DayHeaderWithReminders },
           day: { header: DayHeaderWithReminders },
           month: { header: MonthColumnHeader, dateHeader: MonthDateHeader, event: MonthEvent },
+          agenda: { event: AgendaEvent },
         }}
         style={{ flex: 1, minHeight: 0 }}
       />

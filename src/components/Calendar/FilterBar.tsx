@@ -31,9 +31,11 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
   const endHours = Array.from({ length: 24 - settings.dayStartHour }, (_, i) => settings.dayStartHour + 1 + i);
 
   return (
-    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-      {/* Filtros por estado (también hacen de leyenda) */}
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="mb-2.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-2">
+      {/* Filtros por estado (también hacen de leyenda).
+          En móvil son una tira que se desliza en horizontal en vez de
+          apilarse en cuatro filas y comerse el alto del calendario. */}
+      <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-0.5 sm:order-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {(Object.keys(STATUS_VISUALS) as StatusFilterKey[]).map((key) => {
           const visual = STATUS_VISUALS[key];
           const active = settings.statusFilters[key];
@@ -44,7 +46,7 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
               onClick={() => toggleStatus(key)}
               aria-pressed={active}
               title={active ? `Ocultar ${visual.label.toLowerCase()}` : `Mostrar ${visual.label.toLowerCase()}`}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold shadow-sm transition-all duration-200 active:scale-95 ${
+              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12.5px] font-bold shadow-sm transition-all duration-200 active:scale-95 sm:px-3 sm:text-[13px] ${
                 active ? 'ring-1 ring-black/10' : 'border border-line bg-panel-2 opacity-60 hover:opacity-100'
               }`}
               style={active ? { background: visual.bg, color: visual.ink } : undefined}
@@ -69,7 +71,7 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
           onClick={() => updateSettings({ showReminders: !settings.showReminders })}
           aria-pressed={settings.showReminders}
           title="Mostrar los recordatorios sueltos"
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold shadow-sm transition-all duration-200 active:scale-95 ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12.5px] font-bold shadow-sm transition-all duration-200 active:scale-95 sm:px-3 sm:text-[13px] ${
             settings.showReminders
               ? 'ring-1 ring-black/10'
               : 'border border-line bg-panel-2 text-ink-soft opacity-60 hover:opacity-100'
@@ -88,7 +90,7 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
           onClick={() => updateSettings({ showCancelled: !settings.showCancelled })}
           aria-pressed={settings.showCancelled}
           title="Mostrar las citas que se eliminaron"
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold shadow-sm transition-all duration-200 active:scale-95 ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12.5px] font-bold shadow-sm transition-all duration-200 active:scale-95 sm:px-3 sm:text-[13px] ${
             settings.showCancelled
               ? 'ring-1 ring-black/10'
               : 'border border-dashed border-line bg-panel-2 text-ink-soft opacity-70 hover:opacity-100'
@@ -100,37 +102,41 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
         </button>
       </div>
 
-      {/* Franja de horas visible */}
-      <div className="flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1">
-        <span className="hidden text-[12px] font-bold uppercase tracking-wide text-ink-soft sm:inline">Horario</span>
-        <select
-          aria-label="Hora de inicio del calendario"
-          value={settings.dayStartHour}
-          onChange={(e) => updateSettings({ dayStartHour: Number(e.target.value) })}
-          className="rounded-md bg-transparent px-1 py-0.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-[var(--ring)]"
-        >
-          {START_HOURS.map((hour) => (
-            <option key={hour} value={hour}>{hourLabel(hour)}</option>
-          ))}
-        </select>
-        <span className="text-[12px] font-semibold text-ink-soft">a</span>
-        <select
-          aria-label="Hora de fin del calendario"
-          value={settings.dayEndHour}
-          onChange={(e) => updateSettings({ dayEndHour: Number(e.target.value) })}
-          className="rounded-md bg-transparent px-1 py-0.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-[var(--ring)]"
-        >
-          {endHours.map((hour) => (
-            <option key={hour} value={hour}>{hourLabel(hour)}</option>
-          ))}
-        </select>
-      </div>
+      {/* Franja horaria, relojes y ajustes.
+          En móvil van arriba en su propia fila; desde `sm` se alinean a la derecha. */}
+      <div className="flex items-center gap-2 sm:order-2 sm:ml-auto">
+        {/* Franja de horas visible */}
+        <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 sm:px-3">
+          <span className="hidden text-[12px] font-bold uppercase tracking-wide text-ink-soft sm:inline">Horario</span>
+          <select
+            aria-label="Hora de inicio del calendario"
+            value={settings.dayStartHour}
+            onChange={(e) => updateSettings({ dayStartHour: Number(e.target.value) })}
+            className="rounded-md bg-panel-2 px-1 py-0.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          >
+            {START_HOURS.map((hour) => (
+              <option key={hour} value={hour}>{hourLabel(hour, true)}</option>
+            ))}
+          </select>
+          <span className="text-[12px] font-semibold text-ink-soft">a</span>
+          <select
+            aria-label="Hora de fin del calendario"
+            title={settings.dayEndHour === 24 ? 'Hasta el final del día (medianoche)' : undefined}
+            value={settings.dayEndHour}
+            onChange={(e) => updateSettings({ dayEndHour: Number(e.target.value) })}
+            className="rounded-md bg-panel-2 px-1 py-0.5 text-[13px] font-bold text-ink outline-none focus:ring-2 focus:ring-[var(--ring)]"
+          >
+            {endHours.map((hour) => (
+              <option key={hour} value={hour}>{hourLabel(hour, true)}</option>
+            ))}
+          </select>
+        </div>
 
-      {/* Relojes: el mío y el del despacho */}
-      <div className="ml-auto flex items-center gap-2">
+        {/* Relojes: el mío y el del despacho (en pantallas anchas; en el resto
+            se consultan desde Configuración) */}
         {settings.showLocalNow && (
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1.5 text-[13px] font-bold text-ink"
+            className="hidden items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1.5 text-[13px] font-bold text-ink lg:inline-flex"
             title={`${settings.localLabel} · ${localZone}`}
           >
             <span aria-hidden className="h-[3px] w-4 rounded-full" style={{ background: 'var(--now)' }} />
@@ -140,7 +146,7 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
         )}
         {settings.showLawyerNow && (
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1.5 text-[13px] font-bold text-ink"
+            className="hidden items-center gap-1.5 rounded-full border border-line bg-panel-2 px-3 py-1.5 text-[13px] font-bold text-ink lg:inline-flex"
             title={`${settings.lawyerLabel} · ${settings.lawyerTimeZone}`}
           >
             <span
@@ -158,7 +164,7 @@ export default function FilterBar({ settings, onOpenSettings }: Props) {
           onClick={onOpenSettings}
           title="Configuración"
           aria-label="Configuración"
-          className="flex items-center gap-1.5 rounded-full border border-line bg-panel px-3 py-1.5 text-[13px] font-bold text-ink shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-soft active:scale-95"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-panel px-2.5 py-2 text-[13px] font-bold text-ink shadow-sm transition-all duration-200 hover:border-brand hover:bg-brand-soft active:scale-95 sm:px-3 sm:py-1.5"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3.2" />

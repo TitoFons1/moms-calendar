@@ -127,14 +127,20 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
     }
   }, [isOpen, selectedDate, selectedAppointment, reset, setValue]);
 
-  // Cerrar con la tecla Escape
+  // Cerrar con la tecla Escape. En móvil el diálogo ocupa la pantalla entera,
+  // así que además congelamos el scroll de la página que queda detrás.
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen, onClose]);
 
   const watchStartTime = watch('startTime');
@@ -351,9 +357,10 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
   ];
 
   return (
-    // El diálogo vive DENTRO de la tarjeta del calendario: nunca se sale de ella
+    /* Móvil: hoja a pantalla completa, que es donde se agradece cada píxel.
+       Desde `md` vuelve a ser un diálogo DENTRO de la tarjeta del calendario. */
     <div
-      className="anim-fade-in absolute inset-0 z-40 flex items-center justify-center rounded-3xl bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5"
+      className="anim-fade-in fixed inset-0 z-50 flex items-stretch justify-center bg-slate-950/55 backdrop-blur-sm md:absolute md:z-40 md:items-center md:rounded-3xl md:p-5"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -361,24 +368,24 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
       <div
         role="dialog"
         aria-modal="true"
-        className="anim-pop-in flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-pop)]"
+        className="anim-pop-in sheet-safe flex h-full w-full flex-col overflow-hidden bg-panel shadow-[var(--shadow-pop)] md:h-auto md:max-h-full md:max-w-2xl md:rounded-2xl md:border md:border-line"
       >
 
-        <div className="flex shrink-0 items-center justify-between border-b border-line px-5 py-3.5">
-          <h2 className="flex items-center gap-2 text-[17px] font-bold text-ink">
-            {isReminder ? <BellIcon className="h-[18px] w-[18px]" /> : <CalendarIcon className="h-[18px] w-[18px]" />}
-            {heading}
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5 sm:py-3.5">
+          <h2 className="flex min-w-0 items-center gap-2 text-[16px] font-bold text-ink sm:text-[17px]">
+            {isReminder ? <BellIcon className="h-[18px] w-[18px] shrink-0" /> : <CalendarIcon className="h-[18px] w-[18px] shrink-0" />}
+            <span className="truncate">{heading}</span>
           </h2>
           <button
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-2xl leading-none text-ink-soft transition-all duration-200 hover:bg-brand-soft hover:text-ink active:scale-90"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-ink-soft transition-all duration-200 hover:bg-brand-soft hover:text-ink active:scale-90"
           >
             &times;
           </button>
         </div>
 
-        <div className="min-h-0 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3.5 sm:px-5 sm:py-4">
           {wasCancelled && (
             <div
               className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl px-3.5 py-2.5"
@@ -459,7 +466,7 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 rounded-xl border border-line bg-panel-2 p-3">
+                <div className="grid grid-cols-1 gap-3 rounded-xl border border-line bg-panel-2 p-2.5 min-[420px]:grid-cols-2 sm:p-3">
                   <div>
                     <label className={LABEL}>Fecha *</label>
                     <input {...register("date", { required: true })} type="date" className={FIELD} />
@@ -475,7 +482,7 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
                       className={FIELD}
                     />
                   </div>
-                  <p className="col-span-2 text-[12.5px] font-medium text-ink-soft">
+                  <p className="text-[12.5px] font-medium text-ink-soft min-[420px]:col-span-2">
                     Un recordatorio no tiene hora de fin: aparece en el calendario como un aviso de ese momento.
                   </p>
                 </div>
@@ -580,7 +587,7 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
                 </div>
 
                 {/* Fecha, Inicio, Fin, Duración y aviso */}
-                <div className="grid grid-cols-2 items-end gap-3 rounded-xl border border-line bg-panel-2 p-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 items-end gap-3 rounded-xl border border-line bg-panel-2 p-2.5 sm:p-3 md:grid-cols-4">
                   <div className="col-span-2 md:col-span-1">
                     <label className={LABEL}>Fecha *</label>
                     <input {...register("date", { required: true })} type="date" className={FIELD} />
@@ -657,25 +664,25 @@ export default function AppointmentModal({ isOpen, onClose, selectedDate, select
           </form>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-line bg-panel-2 px-5 py-3.5">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-line bg-panel-2 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5 sm:py-3.5">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             {isEditing && !wasCancelled && (
-              <button type="button" onClick={handleCancelAppointment} className="rounded-xl border border-red-300 bg-panel px-4 py-2 text-[13.5px] font-bold text-red-600 shadow-sm transition-all duration-200 hover:bg-red-50 active:scale-95 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">
+              <button type="button" onClick={handleCancelAppointment} className="w-full rounded-xl border border-red-300 sm:w-auto bg-panel px-4 py-2 text-[13.5px] font-bold text-red-600 shadow-sm transition-all duration-200 hover:bg-red-50 active:scale-95 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">
                 {isReminder ? 'Eliminar recordatorio' : 'Eliminar cita'}
               </button>
             )}
             {isEditing && wasCancelled && (
-              <button type="button" onClick={handleHardDelete} className="rounded-xl border border-red-300 bg-panel px-4 py-2 text-[13.5px] font-bold text-red-600 shadow-sm transition-all duration-200 hover:bg-red-50 active:scale-95 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">
+              <button type="button" onClick={handleHardDelete} className="w-full rounded-xl border border-red-300 sm:w-auto bg-panel px-4 py-2 text-[13.5px] font-bold text-red-600 shadow-sm transition-all duration-200 hover:bg-red-50 active:scale-95 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">
                 Eliminar definitivamente
               </button>
             )}
           </div>
 
           <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="rounded-xl border border-line bg-panel px-4 py-2 text-[13.5px] font-bold text-ink shadow-sm transition-all duration-200 hover:bg-brand-soft active:scale-95">
+            <button type="button" onClick={onClose} className="flex-1 rounded-xl border border-line bg-panel px-4 py-2.5 text-[13.5px] font-bold text-ink shadow-sm transition-all duration-200 hover:bg-brand-soft active:scale-95 sm:flex-none sm:py-2">
               Cancelar
             </button>
-            <button type="submit" form="appointment-form" className="rounded-xl bg-brand px-5 py-2 text-[13.5px] font-bold text-white shadow-sm transition-all duration-200 hover:brightness-110 active:scale-95">
+            <button type="submit" form="appointment-form" className="flex-1 rounded-xl bg-brand px-5 py-2.5 text-[13.5px] font-bold text-white shadow-sm transition-all duration-200 hover:brightness-110 active:scale-95 sm:flex-none sm:py-2">
               {isEditing ? 'Guardar cambios' : (isReminder ? 'Guardar recordatorio' : 'Guardar cita')}
             </button>
           </div>

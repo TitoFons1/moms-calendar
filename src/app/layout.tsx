@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Mom's Calendar",
   description: "Agenda de vistas, deposiciones y llamadas",
+};
+
+// Escala 1:1 al abrir, pero sin bloquear el zoom del usuario (accesibilidad).
+// `viewportFit: cover` deja que usemos las zonas seguras del móvil con notch.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eef1f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0e15" },
+  ],
 };
 
 // Aplica el tema guardado antes del primer pintado para que no haya destello blanco
